@@ -9,49 +9,62 @@ var check = require('../src/check');
 var data_access = require('../src/data_access');
 var loader = require('../src/loader');
 
-
 const CHECKS_DIR = path.join(__dirname, 'expected');
 
-
 function setup_test(callback) {
-	const test_tasks = data_access.ALL_TASKS.slice();
-	test_tasks.push.apply(test_tasks, ['buli_playermatches', 'buli_teammatches', 'buli_players', 'buli_teams']);
+  const test_tasks = data_access.ALL_TASKS.slice();
+  test_tasks.push.apply(test_tasks, [
+    'buli_playermatches',
+    'buli_teammatches',
+    'buli_players',
+    'buli_teams',
+  ]);
 
-	loader.load_data(path.join(__dirname, 'testdata'), test_tasks, function(err, data) {
-		if (err) return callback(err);
-		const season = {
-			key: 'testseason',
-			data,
-			check_now: 1489078800000,
-		};
-		data_access.enrich(season);
-		callback(err, season);
-	});
+  loader.load_data(path.join(__dirname, 'testdata'), test_tasks, function(
+    err,
+    data
+  ) {
+    if (err) return callback(err);
+    const season = {
+      key: 'testseason',
+      data,
+      check_now: 1489078800000,
+    };
+    data_access.enrich(season);
+    callback(err, season);
+  });
 }
 
 setup_test(function(err, season) {
-	if (err) throw err;
+  if (err) throw err;
 
-	describe('checks', function() {
-		async.each(check.CHECK_NAMES, function(check_name, cb) {
-			var expected_fn = path.join(CHECKS_DIR, check_name + '.json');
-			fs.readFile(expected_fn, {encoding: 'utf8'}, function(err, expected_json) {
-				if (err) return cb(err);
-				var expected = JSON.parse(expected_json);
+  describe('checks', function() {
+    async.each(
+      check.CHECK_NAMES,
+      function(check_name, cb) {
+        var expected_fn = path.join(CHECKS_DIR, check_name + '.json');
+        fs.readFile(expected_fn, { encoding: 'utf8' }, function(
+          err,
+          expected_json
+        ) {
+          if (err) return cb(err);
+          var expected = JSON.parse(expected_json);
 
-				it(check_name, function(done) {
-					var check_func = check.CHECKS_BY_NAME[check_name];
-					var results = Array.from(check_func(season));
-					assert.deepStrictEqual(results, expected);
-					done();
-				});
-				cb();
-			});
-		}, function(err) {
-			if (err) {
-				throw err;
-			}
-			run();
-		});
-	});
+          it(check_name, function(done) {
+            var check_func = check.CHECKS_BY_NAME[check_name];
+            var results = Array.from(check_func(season));
+            assert.deepStrictEqual(results, expected);
+            done();
+          });
+          cb();
+        });
+      },
+      function(err) {
+        if (err) {
+          throw err;
+        }
+        run();
+      }
+    );
+  });
 });
